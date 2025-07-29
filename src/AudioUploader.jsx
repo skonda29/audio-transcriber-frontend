@@ -145,8 +145,14 @@ const AudioUploader = () => {
         setError(null);
 
         try {
-            console.log('Sending request to /api/transcribe...');
-            const response = await axios.post('/api/transcribe', formData, {
+            // Use backend URL directly for production, proxy for development
+            const baseURL = import.meta.env.PROD 
+                ? 'https://audio-transcriber-backend-3.onrender.com'
+                : '';
+            const apiURL = `${baseURL}/api/transcribe`;
+            
+            console.log('Sending request to:', apiURL);
+            const response = await axios.post(apiURL, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
