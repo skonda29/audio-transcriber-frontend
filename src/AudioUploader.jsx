@@ -212,14 +212,14 @@ const AudioUploader = () => {
             <div className="space-y-6">
                 <div>
                     <h3 className="text-lg font-semibold mb-3 text-blue-300">Transcription:</h3>
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-                        <p className="text-white leading-relaxed">
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 max-h-80 overflow-y-auto">
+                        <p className="text-white leading-relaxed whitespace-pre-wrap">
                             {typeof transcriptionResult === 'object' && transcriptionResult.transcription 
                                 ? transcriptionResult.transcription 
                                 : transcriptionResult}
                         </p>
                         {typeof transcriptionResult === 'object' && transcriptionResult.transcriptionLength && (
-                            <div className="text-sm text-gray-400 mt-2">
+                            <div className="text-sm text-gray-400 mt-2 pt-2 border-t border-gray-600">
                                 Length: {transcriptionResult.transcriptionLength} characters
                             </div>
                         )}
@@ -227,14 +227,14 @@ const AudioUploader = () => {
                 </div>
                 <div>
                     <h3 className="text-lg font-semibold mb-3 text-green-300">Summary:</h3>
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-                        <p className="text-white leading-relaxed">
+                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 max-h-60 overflow-y-auto">
+                        <p className="text-white leading-relaxed whitespace-pre-wrap">
                             {typeof transcriptionResult === 'object' && transcriptionResult.summary 
                                 ? transcriptionResult.summary 
                                 : 'No summary available.'}
                         </p>
                         {typeof transcriptionResult === 'object' && transcriptionResult.summaryLength && (
-                            <div className="text-sm text-gray-400 mt-2">
+                            <div className="text-sm text-gray-400 mt-2 pt-2 border-t border-gray-600">
                                 Length: {transcriptionResult.summaryLength} characters
                             </div>
                         )}
