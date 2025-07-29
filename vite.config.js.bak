@@ -14,7 +14,7 @@ export default defineConfig({
       '/api': {
         target: 'https://audio-transcriber-backend-3.onrender.com',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('proxy error', err);
