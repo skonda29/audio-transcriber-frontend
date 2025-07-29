@@ -8,7 +8,6 @@ const AudioUploader = () => {
     useEffect(() => {
         const particlesContainer = document.getElementById('particles-container');
         if (!particlesContainer) {
-            console.warn('Particles container not found');
             return;
         }
         
@@ -104,10 +103,7 @@ const AudioUploader = () => {
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-            console.log('File selected:', selectedFile.name, selectedFile.type, selectedFile.size);
-            
-            // Check file size (limit to 10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            const maxSize = 10 * 1024 * 1024;
             if (selectedFile.size > maxSize) {
                 setError(`File too large. Please select a file smaller than 10MB. Current file: ${(selectedFile.size / (1024 * 1024)).toFixed(1)}MB`);
                 setFile(null);
@@ -137,55 +133,52 @@ const AudioUploader = () => {
             return;
         }
 
-        console.log('Starting transcription for file:', file.name);
         const startTime = Date.now();
         const formData = new FormData();
         formData.append('file', file);
+        
         setLoading(true);
         setError(null);
 
         try {
-            // Use backend URL directly for production, proxy for development
             const baseURL = import.meta.env.PROD 
                 ? 'https://audio-transcriber-backend-3.onrender.com'
                 : '';
             const apiURL = `${baseURL}/api/transcribe`;
             
-            console.log('Sending request to:', apiURL);
             const response = await axios.post(apiURL, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Accept': 'application/json',
                 },
-                timeout: 60000, 
+                timeout: 60000,
+                withCredentials: true,
             });
             
-            console.log('Response received:', response.status, response.data);
-            
-            let transcriptionText = '';
-            if (typeof response.data === 'string') {
-                transcriptionText = response.data;
-            } else if (response.data && response.data.transcription) {
-                transcriptionText = response.data.transcription;
-            } else if (response.data && response.data.text) {
-                transcriptionText = response.data.text;
-            } else if (response.data && response.data.result) {
-                transcriptionText = response.data.result;
+            if (response.data && response.data.transcription && response.data.summary) {
+                if (response.data.transcription.includes('Error:')) {
+                    setError(response.data.transcription);
+                    return;
+                }
+                
+                setTranscriptionResult({
+                    transcription: response.data.transcription,
+                    summary: response.data.summary,
+                    transcriptionLength: response.data.transcriptionLength,
+                    summaryLength: response.data.summaryLength,
+                    timestamp: response.data.timestamp
+                });
             } else {
-                transcriptionText = JSON.stringify(response.data);
+                setTranscriptionResult(response.data);
             }
-            
-            setTranscriptionResult(transcriptionText);
             metricsService.recordTranscriptionSuccess((Date.now() - startTime) / 1000);
-            console.log('Transcription successful:', transcriptionText);
         } catch (error) {
-            console.error("Transcription error:", error);
-            console.error("Error response:", error.response?.data);
-            console.error("Error status:", error.response?.status);
             
             let errorMessage = "Failed to transcribe audio.";
             
             if (error.response?.status === 413) {
                 errorMessage = "File too large for server. The backend has file size restrictions. Try compressing your audio file or using a shorter recording.";
+            } else if (error.response?.status === 500) {
+                errorMessage = `Backend Processing Error: The transcription service encountered an internal error processing your audio file. This may be due to the audio format, length, or temporary service issues. Try a different audio file or try again later.`;
             } else if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             } else if (error.response?.data?.error) {
@@ -220,15 +213,38 @@ const AudioUploader = () => {
                 <div>
                     <h3 className="text-lg font-semibold mb-3 text-blue-300">Transcription:</h3>
                     <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-                        <p className="text-white leading-relaxed">{transcriptionResult}</p>
+                        <p className="text-white leading-relaxed">
+                            {typeof transcriptionResult === 'object' && transcriptionResult.transcription 
+                                ? transcriptionResult.transcription 
+                                : transcriptionResult}
+                        </p>
+                        {typeof transcriptionResult === 'object' && transcriptionResult.transcriptionLength && (
+                            <div className="text-sm text-gray-400 mt-2">
+                                Length: {transcriptionResult.transcriptionLength} characters
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div>
                     <h3 className="text-lg font-semibold mb-3 text-green-300">Summary:</h3>
                     <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-                        <p className="text-white leading-relaxed">No summary available.</p>
+                        <p className="text-white leading-relaxed">
+                            {typeof transcriptionResult === 'object' && transcriptionResult.summary 
+                                ? transcriptionResult.summary 
+                                : 'No summary available.'}
+                        </p>
+                        {typeof transcriptionResult === 'object' && transcriptionResult.summaryLength && (
+                            <div className="text-sm text-gray-400 mt-2">
+                                Length: {transcriptionResult.summaryLength} characters
+                            </div>
+                        )}
                     </div>
                 </div>
+                {typeof transcriptionResult === 'object' && transcriptionResult.timestamp && (
+                    <div className="text-xs text-gray-500 text-center">
+                        Processed: {new Date(transcriptionResult.timestamp).toLocaleString()}
+                    </div>
+                )}
             </div>
         );
     }

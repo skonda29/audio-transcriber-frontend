@@ -4,11 +4,8 @@ import Particles from './Particles';
 
 export default function Welcome({ onContinue }) {
     useEffect(() => {
-        console.log('Welcome component mounted');
-        
         const particlesContainer = document.getElementById('particles-container');
         if (!particlesContainer) {
-            console.warn('Particles container not found in Welcome component');
             return;
         }
         
@@ -96,7 +93,6 @@ export default function Welcome({ onContinue }) {
     }, []);
 
     const handleContinueClick = () => {
-        console.log('Continue button clicked');
         onContinue();
     };
 
