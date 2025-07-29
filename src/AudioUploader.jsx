@@ -176,6 +176,14 @@ const AudioUploader = () => {
                     >
                         Transcribe
                     </button>
+
+                    <button
+                    onClick={() => window.open('https://document-chat-pro.streamlit.app/', '_blank')}
+                    className="btn"
+                    style={{ marginTop: '10px', marginLeft: '10px' }}
+                    >
+                    Access DocuChat Pro
+            </button>
                 </div>
 
 
