@@ -91,7 +91,7 @@ const AudioUploader = () => {
             }, []);
 
     const [file, setFile] = useState(null);
-    const [transcriptionResult, setTranscriptionResult] = useState(null);
+    const [transcription, setTranscription] = useState("result will appear here...");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [metrics, setMetrics] = useState(null);
@@ -121,16 +121,18 @@ const AudioUploader = () => {
 
         try {
             const response = await axios.post(
-                "/api/transcribe",
-                formData
-                // Note: Don't set Content-Type for FormData - let axios handle it
+                "http://localhost:8080/api/transcribe",
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    }
+                }
             );
-            setTranscriptionResult(response.data);
+            setTranscription(response.data);
             metricsService.recordTranscriptionSuccess((Date.now() - startTime) / 1000);
         } catch (error) {
-            console.error("Transcription error:", error);
-            const errorMessage = error.response?.data?.message || error.message || "Failed to transcribe audio.";
-            setError(`Error: ${errorMessage}`);
+            setError("Failed to transcribe audio.");
             metricsService.recordTranscriptionError();
         } finally {
             setLoading(false);
@@ -138,40 +140,11 @@ const AudioUploader = () => {
         }
     };
 
-    let displayContent = null;
-    if (loading) {
-        displayContent = <div className="text-center">Loading...</div>;
-    } else if (error) {
-        displayContent = <div className="text-center text-red-400">{error}</div>;
-    } else if (!transcriptionResult) {
-        displayContent = <div className="text-center">Upload an audio file and click transcribe to see results...</div>;
-    } else {
-        // Safely extract the text values from the response
-        const transcriptionText = typeof transcriptionResult?.transcription === 'string' 
-            ? transcriptionResult.transcription 
-            : JSON.stringify(transcriptionResult?.transcription || 'No transcription available');
-            
-        const summaryText = typeof transcriptionResult?.summary === 'string' 
-            ? transcriptionResult.summary 
-            : JSON.stringify(transcriptionResult?.summary || 'No summary available');
-
-        displayContent = (
-            <div className="space-y-6">
-                <div>
-                    <h3 className="text-lg font-semibold mb-3 text-blue-300">Transcription:</h3>
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-                        <p className="text-white leading-relaxed">{transcriptionText}</p>
-                    </div>
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold mb-3 text-green-300">Summary:</h3>
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-600">
-                        <p className="text-white leading-relaxed">{summaryText}</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    let displayedTranscription = "";
+    if (loading) displayedTranscription = "Loading...";
+    else if (error) displayedTranscription = error;
+    else if (transcription) displayedTranscription = transcription;
+    if (!transcription) displayedTranscription = "No audio to transcribe";
 
     return (
         <div className="w-full">
@@ -205,7 +178,7 @@ const AudioUploader = () => {
                     </button>
 
                     <button
-                    onClick={() => window.open('https://document-chat-pro.streamlit.app', '_blank')}
+                    onClick={() => window.open('https://document-chat-pro.streamlit.app/', '_blank')}
                     className="btn"
                     style={{ marginTop: '10px', marginLeft: '10px' }}
                     >
@@ -216,8 +189,8 @@ const AudioUploader = () => {
 
                 <div className="content-container">
                     <p className="text-xl font-semibold text-center">Transcription Result</p>
-                    <div className="bg-black/70 border border-gray-300 rounded-lg p-6 min-h-[200px] shadow-md">
-                        {displayContent}
+                    <div className="bg-black/70 text-white-700 border border-gray-300 rounded-lg p-4 flex items-center justify-center text-center min-h-[200px] whitespace-pre-wrap shadow-md">
+                        {displayedTranscription}
                     </div>
                 </div>
 
